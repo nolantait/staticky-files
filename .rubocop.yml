@@ -1,0 +1,19 @@
+require:
+  - rubocop-inhouse
+
+inherit_gem:
+  rubocop-inhouse:
+    - config/default.yml
+
+AllCops:
+  TargetRubyVersion: 3.1
+
+Naming/FileName:
+  Exclude:
+    - lib/staticky-files.rb
+
+Style/StaticClass:
+  Enabled: false
+
+Metrics/ParameterLists:
+  Enabled: false
