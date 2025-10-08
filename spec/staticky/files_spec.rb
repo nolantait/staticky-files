@@ -2011,10 +2011,10 @@ RSpec.describe Staticky::Files do
       subject.touch(root.join("file-2.txt"))
 
       expect(subject.entries(root)).to eq [
-        ".",
-        "..",
         "file-2.txt",
-        "file-1.txt"
+        "file-1.txt",
+        "..",
+        "."
       ]
     end
   end

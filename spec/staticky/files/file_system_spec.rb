@@ -622,13 +622,13 @@ RSpec.describe Staticky::Files::FileSystem do
       subject.touch(root.join("file-1.txt"))
       subject.touch(root.join("file-2.txt"))
 
-      expect(subject.entries(root)).to eq [".", "..", "file-2.txt", "file-1.txt"]
+      expect(subject.entries(root)).to eq ["file-2.txt", "file-1.txt", "..", "."]
     end
 
     it "returns an array with only relative paths on an empty directory" do
       subject.mkdir(root.join("empty"))
 
-      expect(subject.entries(root.join("empty"))).to eq [".", ".."]
+      expect(subject.entries(root.join("empty"))).to eq ["..", "."]
     end
 
     it "raises error if directory doesn't exist" do
