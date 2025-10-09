@@ -645,46 +645,66 @@ RSpec.describe Staticky::Files::MemoryFileSystem do
     end
   end
 
-  describe "#entries" do
-    it "raises an error when the path does not exist" do
-      path = subject.join("file-1.txt")
+  describe "#glob" do
+    it "returns all Ruby files in the memory file system" do
+      subject.write("lib/file1.rb", "content")
+      subject.write("lib/file2.rb", "content")
+      subject.write("lib/file.txt", "content")
+      subject.mkdir("lib/dir")
+      subject.write("lib/dir/file3.rb", "content")
 
-      expect { subject.entries(path) }
-        .to raise_error do |exception|
-          expect(exception).to be_a(Staticky::Files::IOError)
-          expect(exception.cause).to be_a(Errno::ENOENT)
-          expect(exception.message).to include(path.to_s)
-        end
+      expect(subject.glob("**/*.rb")).to contain_exactly(
+        "/lib/file1.rb",
+        "/lib/file2.rb",
+        "/lib/dir/file3.rb"
+      )
     end
 
-    it "raises an error when the path is a file" do
-      path = subject.join("file-1.txt")
-      subject.touch(path)
+    it "returns an empty array if no files match the pattern" do
+      subject.write("lib/file.txt", "content")
 
-      expect { subject.entries(path) }
-        .to raise_error do |exception|
-          expect(exception).to be_a(Staticky::Files::IOError)
-          expect(exception.cause).to be_a(Errno::ENOTDIR)
-          expect(exception.message).to include(path.to_s)
-        end
+      expect(subject.glob("**/*.rb")).to eq([])
     end
+  end
 
-    it "returns entries when the path is a directory" do
-      subject.touch(subject.join("file-1.txt"))
-      subject.touch(subject.join("file-2.txt"))
+  it "raises an error when the path does not exist" do
+    path = subject.join("file-1.txt")
 
-      expect(subject.entries(subject.join)).to eq [
-        ".",
-        "..",
-        "file-1.txt",
-        "file-2.txt"
-      ]
-    end
+    expect { subject.entries(path) }
+      .to raise_error do |exception|
+        expect(exception).to be_a(Staticky::Files::IOError)
+        expect(exception.cause).to be_a(Errno::ENOENT)
+        expect(exception.message).to include(path.to_s)
+      end
+  end
 
-    it "returns an array with only relative paths on an empty directory" do
-      subject.mkdir("empty")
+  it "raises an error when the path is a file" do
+    path = subject.join("file-1.txt")
+    subject.touch(path)
 
-      expect(subject.entries(subject.join("empty"))).to eq [".", ".."]
-    end
+    expect { subject.entries(path) }
+      .to raise_error do |exception|
+        expect(exception).to be_a(Staticky::Files::IOError)
+        expect(exception.cause).to be_a(Errno::ENOTDIR)
+        expect(exception.message).to include(path.to_s)
+      end
+  end
+
+  it "returns entries when the path is a directory" do
+    subject.touch(subject.join("file-1.txt"))
+    subject.touch(subject.join("file-2.txt"))
+
+    expect(subject.entries(subject.join)).to eq [
+      ".",
+      "..",
+      "file-1.txt",
+      "file-2.txt"
+    ]
+  end
+
+  it "returns an array with only relative paths on an empty directory" do
+    subject.mkdir("empty")
+
+    expect(subject.entries(subject.join("empty"))).to eq [".", ".."]
   end
 end

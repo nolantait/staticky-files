@@ -337,7 +337,37 @@ module Staticky
         [".", ".."] + Array(node.children&.keys)
       end
 
+      # Returns an array of file paths that match the given pattern.
+      #
+      # @param pattern [String] the glob pattern to match
+      # @return [Array<String>] the matching file paths
+      def glob(pattern)
+        matches = []
+        traverse(@root, "", pattern, matches)
+        matches
+      end
+
       private
+
+      def traverse(node, current_path, pattern, matches)
+        if node.file? && File.fnmatch(pattern, current_path)
+          matches << current_path
+        elsif node.directory?
+          node.children.each do |name, child|
+            traverse(child, File.join(current_path, name), pattern, matches)
+          end
+        end
+      end
+
+      def traverse(node, current_path, pattern, matches)
+        if node.file? && File.fnmatch(pattern, current_path)
+          matches << current_path
+        elsif node.directory?
+          node.children.each do |name, child|
+            traverse(child, File.join(current_path, name), pattern, matches)
+          end
+        end
+      end
 
       def for_each_segment(path, &blk)
         segments = Path.split(path)
