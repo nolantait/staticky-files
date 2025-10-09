@@ -343,14 +343,14 @@ module Staticky
       # @return [Array<String>] the matching file paths
       def glob(pattern)
         matches = []
-        traverse(@root, "", pattern.to_s, matches)
+        traverse(@root, "/", pattern.to_s, matches)
         matches
       end
 
       private
 
       def traverse(node, current_path, pattern, matches)
-        if node.file? && File.fnmatch(pattern, current_path)
+        if node.file? && File.fnmatch(pattern, current_path, File::FNM_PATHNAME)
           matches << current_path
         elsif node.directory?
           node.children.each do |name, child|
