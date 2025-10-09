@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "debug"
+
 $LOAD_PATH.unshift "./lib"
 require "staticky/files"
 require "pathname"

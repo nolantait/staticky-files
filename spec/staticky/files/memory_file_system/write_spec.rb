@@ -52,22 +52,18 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#write" do
     expect(path).to have_file_contents("new words")
   end
 
-  xit "raises error when path isn't writeable" do
-    path = subject.join("write-not-writeable")
-    path.mkpath
-    mode = path.stat.mode
+  it "raises error when path isn't writeable" do
+    path = Pathname.new(subject.join("write-not-writeable"))
+    subject.mkdir(path)
+    subject.chmod(path, 0o000)
 
-    begin
-      path.chmod(0o000)
+    path.chmod(0o000)
 
-      expect { subject.write(path.join("file-not-writeable"), "content") }
-        .to raise_error do |exception|
-          expect(exception).to be_a(Staticky::Files::IOError)
-          expect(exception.cause).to be_a(Errno::EACCES)
-          expect(exception.message).to include(path.to_s)
-        end
-    ensure
-      path.chmod(mode)
-    end
+    expect { subject.write(path.join("file-not-writeable"), "content") }
+      .to raise_error do |exception|
+        expect(exception).to be_a(Staticky::Files::IOError)
+        expect(exception.cause).to be_a(Errno::EACCES)
+        expect(exception.message).to include(path.to_s)
+      end
   end
 end

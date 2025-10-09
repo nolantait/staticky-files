@@ -129,6 +129,22 @@ RSpec.describe Staticky::Files::MemoryFileSystem::Node do
     end
   end
 
+  describe "#readable?" do
+    it "is true by default" do
+      expect(subject.readable?).to be(true)
+    end
+
+    it "is false when mode isn't readable for user" do
+      subject.chmod = 0o200 # write only for user
+      expect(subject.readable?).to be(false)
+    end
+
+    it "is true when mode is readable for user" do
+      subject.chmod = 0o400 # read only for user
+      expect(subject.readable?).to be(true)
+    end
+  end
+
   describe "#read" do
     it "reads file content" do
       subject.write("foo")

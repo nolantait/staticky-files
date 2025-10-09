@@ -164,11 +164,11 @@ module Staticky
         #
         # @return [TrueClass,FalseClass] the result of the check
         def readable?
-          (mode & MODE_USER_READ).nonzero?
+          mode.anybits?(MODE_USER_READ)
         end
 
         def executable?
-          (mode & MODE_USER_EXECUTE).positive?
+          mode.anybits?(MODE_USER_EXECUTE)
         end
 
         def array_to_string(content)

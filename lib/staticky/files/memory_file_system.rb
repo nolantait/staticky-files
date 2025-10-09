@@ -59,14 +59,13 @@ module Staticky
       # @return [Array<String>] the file contents
       #
       # @raise [Staticky::Files::IOError] in case the target path is a directory
-      # or if the file cannot be found
+      # or if the file cannot be found, or if the file is not readable
       def readlines(path)
         path = Path[path]
         node = find(path)
 
         raise IOError, Errno::ENOENT.new(path.to_s) if node.nil?
         raise IOError, Errno::EISDIR.new(path.to_s) if node.directory?
-
         raise IOError, Errno::EACCES.new(path.to_s) unless node.readable?
 
         node.readlines
@@ -93,12 +92,17 @@ module Staticky
       #
       # @param path [String, Array<String>] the target path
       # @param content [String, Array<String>] the content to write
+      #
+      # @raise [Staticky::Files::IOError] in case the target path is a directory
       def write(path, *content)
         path = Path[path]
+        raise IOError, Errno::EISDIR.new(path.to_s) if directory?(path)
+
         node = @root
 
         for_each_segment(path) do |segment|
           node = node.set(segment)
+          raise IOError, Errno::EACCES.new(path.to_s) unless node.readable?
         end
 
         node.write(*content)
@@ -166,7 +170,7 @@ module Staticky
       # @param path [String,Array<String>] the directory to create
       #
       # @raise [Staticky::Files::IOError] in case path is an already existing
-      # file
+      # file, or the file system cannot be accessed
       def mkdir(path)
         path = Path[path]
         node = @root
@@ -174,6 +178,7 @@ module Staticky
         for_each_segment(path) do |segment|
           node = node.set(segment)
           raise IOError, Errno::EEXIST.new(path.to_s) if node.file?
+          raise IOError, Errno::EACCES.new(path.to_s) unless node.readable?
         end
       end
 

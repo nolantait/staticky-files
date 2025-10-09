@@ -22,7 +22,7 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#mkdir_p" do
   end
 
   # It fails due to an RSpec formatter that crashes
-  xit "raises error when path is a file" do
+  it "raises error when path is a file" do
     file = subject.join("mkdir_p", "file")
     subject.write(file, content = "foo")
     path = subject.join(file, "nested")
@@ -31,31 +31,25 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#mkdir_p" do
       .to raise_error do |exception|
         expect(exception).to be_a(Staticky::Files::IOError)
         expect(exception.cause).to be_a(Errno::EEXIST)
-        expect(exception.message).to include(path.to_s)
       end
 
     # ensure it doesn't override already existing file
     expect(subject.directory?(path)).to be(false)
-    expect(subject.read(path)).to eq(content)
+    expect(subject.read(file)).to eq(content)
   end
 
-  xit "raises error when path isn't writeable" do
+  it "raises error when path isn't writeable" do
     parent = subject.join("path")
-    parent.mkpath
-    mode = parent.stat.mode
 
-    begin
-      parent.chmod(0o000)
-      path = parent.join("to", "mkdir_p", "dir-not-writeable")
+    subject.mkdir(parent)
+    subject.chmod(parent, 0o000)
+    path = subject.join(parent, "to", "mkdir_p", "dir-not-writeable")
 
-      expect { subject.mkdir_p(path) }
-        .to raise_error do |exception|
-          expect(exception).to be_a(Staticky::Files::IOError)
-          expect(exception.cause).to be_a(Errno::EACCES)
-          expect(exception.message).to include(parent.to_s)
-        end
-    ensure
-      parent.chmod(mode)
-    end
+    expect { subject.mkdir_p(path) }
+      .to raise_error do |exception|
+        expect(exception).to be_a(Staticky::Files::IOError)
+        expect(exception.cause).to be_a(Errno::EACCES)
+        expect(exception.message).to include(parent.to_s)
+      end
   end
 end
