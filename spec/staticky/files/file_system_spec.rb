@@ -12,7 +12,20 @@ RSpec.describe Staticky::Files::FileSystem do
     FileUtils.remove_entry_secure(root)
   end
 
-  describe "#initialize" do
+  describe "#glob" do
+    it "returns matching file paths for a given pattern" do
+      path1 = root.join("file1.txt")
+      path2 = root.join("file2.txt")
+      subject.touch(path1)
+      subject.touch(path2)
+
+      expect(subject.glob(root.join("*.txt"))).to match_array([path1.to_s, path2.to_s])
+    end
+
+    it "returns an empty array if no files match the pattern" do
+      expect(subject.glob(root.join("*.md"))).to eq([])
+    end
+  end
     it "returns a new instance" do
       expect(subject).to be_a(described_class)
     end
