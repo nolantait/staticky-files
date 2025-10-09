@@ -19,7 +19,20 @@ RSpec.describe Staticky::Files::FileSystem do
       subject.touch(path1)
       subject.touch(path2)
 
-      expect(subject.glob(root.join("*.txt"))).to contain_exactly(path1.to_s, path2.to_s)
+      expect(subject.glob(Pathname.new(root.join("*.txt")))).to contain_exactly(path1.to_s, path2.to_s)
+    end
+
+    it "returns matching file paths for a given pattern as string" do
+      path1 = root.join("something", "file1.txt")
+      path2 = root.join("something", "deeper", "file2.txt")
+      subject.touch(path1)
+      subject.touch(path2)
+
+      expect(subject.glob(root.join("something/**/*"))).to contain_exactly(
+        root.join("something", "deeper").to_s,
+        path1.to_s,
+        path2.to_s
+      )
     end
 
     it "returns an empty array if no files match the pattern" do

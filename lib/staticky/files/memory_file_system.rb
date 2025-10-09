@@ -359,19 +359,9 @@ module Staticky
         end
       end
 
-      def traverse(node, current_path, pattern, matches)
-        if node.file? && File.fnmatch(pattern, current_path)
-          matches << current_path
-        elsif node.directory?
-          node.children.each do |name, child|
-            traverse(child, File.join(current_path, name), pattern, matches)
-          end
-        end
-      end
-
-      def for_each_segment(path, &blk)
+      def for_each_segment(path, &)
         segments = Path.split(path)
-        segments.each(&blk)
+        segments.each(&)
       end
 
       def find_directory(path)
