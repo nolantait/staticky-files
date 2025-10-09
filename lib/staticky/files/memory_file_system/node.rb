@@ -163,6 +163,10 @@ module Staticky
         # Check if node is executable for user
         #
         # @return [TrueClass,FalseClass] the result of the check
+        def readable?
+          (mode & MODE_USER_READ).nonzero?
+        end
+
         def executable?
           (mode & MODE_USER_EXECUTE).positive?
         end

@@ -43,5 +43,16 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#readlines" do
       end
   end
 
-  xit "it raises error if path isn't readable"
+  it "raises error if path isn't readable" do
+    path = subject.join("readlines-unreadable-file")
+    subject.write(path, "content")
+    subject.chmod(path, 0o000) # No permissions
+
+    expect { subject.readlines(path) }
+      .to raise_error do |exception|
+        expect(exception).to be_a(Staticky::Files::IOError)
+        expect(exception.cause).to be_a(Errno::EACCES)
+        expect(exception.message).to include(path.to_s)
+      end
+  end
 end

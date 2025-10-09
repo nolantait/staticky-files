@@ -67,6 +67,8 @@ module Staticky
         raise IOError, Errno::ENOENT.new(path.to_s) if node.nil?
         raise IOError, Errno::EISDIR.new(path.to_s) if node.directory?
 
+        raise IOError, Errno::EACCES.new(path.to_s) unless node.readable?
+
         node.readlines
       end
 
