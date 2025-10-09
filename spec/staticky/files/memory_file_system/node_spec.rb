@@ -187,14 +187,14 @@ RSpec.describe Staticky::Files::MemoryFileSystem::Node do
       expect(subject.mode).to eq(expected)
     end
 
-    it "sets file mode (base 8)" do
+    it "sets file mode (base 8)" do # rubocop:disable RSpec/RepeatedExample
       expected = 0b001000000 # 0100
 
       subject.chmod = 0o100
       expect(subject.mode).to eq(expected)
     end
 
-    it "sets file mode (base 10)" do
+    it "sets file mode (base 10)" do # rubocop:disable RSpec/RepeatedExample
       expected = 0b001000000 # 0100
 
       subject.chmod = 64

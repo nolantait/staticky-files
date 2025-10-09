@@ -58,9 +58,10 @@ module Staticky
 
     # Sets UNIX permissions of the file at the given path.
     #
-    # Accepts permissions in numeric mode only, best provided as octal numbers matching the
-    # standard UNIX octal permission modes, such as `0o544` for a file writeable by its owner and
-    # readable by others, or `0o755` for a file writeable by its owner and executable by everyone.
+    # Accepts permissions in numeric mode only, best provided as octal numbers
+    # matching the standard UNIX octal permission modes, such as `0o544` for a
+    # file writeable by its owner and readable by others, or `0o755` for a
+    # file writeable by its owner and executable by everyone.
     #
     # @param path [String,Pathname] the path to the file
     # @param mode [Integer] the UNIX permissions mode
@@ -69,7 +70,7 @@ module Staticky
     def chmod(path, mode)
       unless mode.is_a?(Integer)
         raise Staticky::Files::Error,
-              "mode should be an integer (e.g. 0o755)"
+          "mode should be an integer (e.g. 0o755)"
       end
 
       adapter.chmod(path, mode)
@@ -128,8 +129,8 @@ module Staticky
     # @param blk [Proc] the code to execute with the target directory
     #
     # @raise [Staticky::Files::IOError] in case of I/O error
-    def chdir(path, &blk)
-      adapter.chdir(path, &blk)
+    def chdir(path, &)
+      adapter.chdir(path, &)
     end
 
     # Creates a directory for the given path.
@@ -837,10 +838,20 @@ module Staticky
     #
     # @raise [Staticky::Files::IOError] in case of I/O error
     #
-    # @since 1.0.1
+    # @since 0.1.0
     # @api public
     def entries(path)
       adapter.entries(path)
+    end
+
+    # Reads files matching the given glob pattern
+    #
+    # @param pattern [String,Pathname] the glob pattern
+    #
+    # @since 0.1.0
+    # @api public
+    def glob(pattern)
+      adapter.glob(pattern)
     end
 
     private
@@ -925,9 +936,9 @@ module Staticky
       delimiter,
       count_offset = 0
     )
-      blocks_count = content.count { |line|
+      blocks_count = content.count do |line|
         line.match?(delimiter.opening_matcher)
-      } + count_offset
+      end + count_offset
       matching_line = content.find do |line|
         blocks_count -= 1 if line.match?(delimiter.closing_matcher)
         line if blocks_count.zero?

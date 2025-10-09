@@ -20,15 +20,23 @@ module Staticky
         MODE_OTHERS_EXECUTE = 0b000000001
 
         # Default directory mode: 0755
-        DEFAULT_DIRECTORY_MODE = MODE_USER_READ | MODE_USER_WRITE | MODE_USER_EXECUTE |
-          MODE_GROUP_READ | MODE_GROUP_EXECUTE |
-          MODE_OTHERS_READ | MODE_GROUP_EXECUTE
+        DEFAULT_DIRECTORY_MODE = MODE_USER_READ |
+          MODE_USER_WRITE |
+          MODE_USER_EXECUTE |
+          MODE_GROUP_READ |
+          MODE_GROUP_EXECUTE |
+          MODE_OTHERS_READ |
+          MODE_GROUP_EXECUTE
 
         # Default file mode: 0644
-        DEFAULT_FILE_MODE = MODE_USER_READ | MODE_USER_WRITE | MODE_GROUP_READ | MODE_OTHERS_READ
+        DEFAULT_FILE_MODE = MODE_USER_READ |
+          MODE_USER_WRITE |
+          MODE_GROUP_READ |
+          MODE_OTHERS_READ
 
         MODE_BASE = 16
         ROOT_PATH = "/"
+        EMPTY_CONTENT = ""
 
         # Instantiate a root node
         #
@@ -132,12 +140,12 @@ module Staticky
         # @raise [Staticky::Files::NotMemoryFileError] if node isn't a file
         def write(content)
           content = case content
-                    when String
-                      content
-                    when Array
-                      array_to_string(content)
-                    when NilClass
-                      EMPTY_CONTENT
+          when String
+            content
+          when Array
+            array_to_string(content)
+          when NilClass
+            EMPTY_CONTENT
           end
 
           @content = StringIO.new(content)

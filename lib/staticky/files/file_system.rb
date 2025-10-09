@@ -312,6 +312,16 @@ module Staticky
         end
       end
 
+      # Returns an array of file paths that match the given pattern.
+      #
+      # @param pattern [String] the glob pattern to match
+      # @return [Array<String>] the matching file paths
+      def glob(pattern)
+        with_error_handling do
+          Dir.glob(pattern)
+        end
+      end
+
       private
 
       # Catch `SystemCallError` and re-raise a `Staticky::Files::IOError`.
