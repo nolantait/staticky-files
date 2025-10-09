@@ -658,6 +658,12 @@ RSpec.describe Staticky::Files::MemoryFileSystem do
         "/lib/file2.rb",
         "/lib/dir/file3.rb"
       )
+
+      expect(subject.glob(Pathname.new("**/*.rb"))).to contain_exactly(
+        "/lib/file1.rb",
+        "/lib/file2.rb",
+        "/lib/dir/file3.rb"
+      )
     end
 
     it "returns an empty array if no files match the pattern" do

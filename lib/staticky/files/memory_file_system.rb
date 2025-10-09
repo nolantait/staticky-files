@@ -339,11 +339,11 @@ module Staticky
 
       # Returns an array of file paths that match the given pattern.
       #
-      # @param pattern [String] the glob pattern to match
+      # @param pattern [Pathname, String] the glob pattern to match
       # @return [Array<String>] the matching file paths
       def glob(pattern)
         matches = []
-        traverse(@root, "", pattern, matches)
+        traverse(@root, "", pattern.to_s, matches)
         matches
       end
 

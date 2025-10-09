@@ -19,16 +19,16 @@ RSpec.describe Staticky::Files::FileSystem do
       subject.touch(path1)
       subject.touch(path2)
 
-      expect(subject.glob(root.join("*.txt"))).to match_array([path1.to_s, path2.to_s])
+      expect(subject.glob(root.join("*.txt"))).to contain_exactly(path1.to_s, path2.to_s)
     end
 
     it "returns an empty array if no files match the pattern" do
       expect(subject.glob(root.join("*.md"))).to eq([])
     end
   end
-    it "returns a new instance" do
-      expect(subject).to be_a(described_class)
-    end
+
+  it "returns a new instance" do
+    expect(subject).to be_a(described_class)
   end
 
   describe "#open" do
