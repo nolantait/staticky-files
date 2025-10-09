@@ -3,6 +3,7 @@
 This is a hard fork of `dry-files` that adds extensions for:
 
 - `entries` to walk entries in a directory
+- `glob` to search for a glob pattern
 
 ## Installation
 
