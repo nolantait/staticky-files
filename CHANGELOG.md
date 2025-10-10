@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## 0.2.1 - 2025-10-09
+
+- Fixes `#glob` for `MemoryFileSystem` not handling empty folders
+
 ## 0.2.0 - 2025-10-09
 
 - Adds `#glob` for more directory file access
