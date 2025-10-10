@@ -360,6 +360,8 @@ module Staticky
         if node.file? && File.fnmatch(pattern, current_path, File::FNM_PATHNAME)
           matches << current_path
         elsif node.directory?
+          return if node.children.nil?
+
           node.children.each do |name, child|
             traverse(child, File.join(current_path, name), pattern, matches)
           end

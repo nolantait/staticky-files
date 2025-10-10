@@ -9,6 +9,7 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#glob" do
     subject.write("lib/file.txt", "content")
     subject.mkdir("lib/dir")
     subject.write("lib/dir/file3.rb", "content")
+    subject.mkdir("lib/empty_dir")
 
     expect(subject.glob("/lib/**/*.rb")).to contain_exactly(
       "/lib/deeper/file1.rb",
