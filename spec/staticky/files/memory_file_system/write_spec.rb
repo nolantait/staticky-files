@@ -57,8 +57,6 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#write" do
     subject.mkdir(path)
     subject.chmod(path, 0o000)
 
-    path.chmod(0o000)
-
     expect { subject.write(path.join("file-not-writeable"), "content") }
       .to raise_error do |exception|
         expect(exception).to be_a(Staticky::Files::IOError)
