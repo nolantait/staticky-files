@@ -352,9 +352,6 @@ module Staticky
         pattern = GlobPattern.new(pattern)
         patterns = pattern.expanded
 
-        # Collect all paths relative to current directory
-        all_paths = collect_paths_relative_to_current_dir
-
         matches = []
         patterns.each do |glob_pattern|
           # Determine if we should match dotfiles
@@ -383,71 +380,8 @@ module Staticky
 
       private
 
-      def current_directory
-        if @root == Node.root
-          File::SEPARATOR
-        else
-          build_path_from_root(@root)
-        end
-      end
-
-      def build_path_from_root(node)
-        # Since we don't have parent pointers, we need a different approach
-        # Let's find the path by traversing from the root
-        find_path_from_root(Node.root, node, "")
-      end
-
-      def find_path_from_root(current_node, target_node, current_path)
-        # If we found the target node, return the path
-        return current_path if current_node == target_node
-
-        # If current node is a directory, check its children
-        if current_node.directory? && current_node.children
-          current_node.children.each do |segment, child|
-            new_path = if current_path.empty?
-              segment
-            else
-              File.join(
-                current_path,
-                segment
-              )
-            end
-            result = find_path_from_root(child, target_node, new_path)
-            return result if result
-          end
-        end
-
-        nil
-      end
-
-      # @param current_dir [String] the current directory path
-      def collect_paths_relative_to_current_dir
-        # Start from the current directory (@root)
-        paths = []
-
-        # Helper function to collect paths
-        collect_paths = ->(node, current_relative_path) do
-          # Add the current path if it's not empty
-          paths << current_relative_path unless current_relative_path.empty?
-
-          # If it's a directory, recurse into children
-          if node.directory? && node.children
-            node.children.each do |segment, child|
-              new_relative_path = if current_relative_path.empty?
-                segment
-              else
-                File.join(current_relative_path, segment)
-              end
-
-              collect_paths.call(child, new_relative_path)
-            end
-          end
-        end
-
-        current_node = find_directory(current_directory) || @root
-        # Start collecting from the current directory (@root)
-        collect_paths.call(current_node, "")
-        paths
+      def all_paths
+        @root.collect_paths
       end
 
       def for_each_segment(path, &)

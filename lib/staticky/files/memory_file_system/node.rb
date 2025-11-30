@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "stringio"
+require "staticky/files/path"
 
 module Staticky
   class Files
@@ -62,6 +63,17 @@ module Staticky
           @content = nil
 
           self.chmod = mode
+        end
+
+        def collect_paths(current_path: "", node: self, paths: [])
+          path = Path.call(current_path, node.segment)
+          paths << path unless node.segment == ROOT_PATH
+
+          children&.each_value do |child|
+            child.collect_paths(current_path: path, node: child, paths: paths)
+          end
+
+          paths
         end
 
         # Get a node child

@@ -250,4 +250,19 @@ RSpec.describe Staticky::Files::MemoryFileSystem::Node do
       expect(subject.executable?).to be(false)
     end
   end
+
+  describe "#collect_paths" do
+    it "collects all paths recursively" do
+      child = subject.set("bin")
+      child.set("script.sh")
+      subject.set("lib")
+
+      expect(subject.collect_paths).to contain_exactly(
+        "/usr",
+        "/usr/bin",
+        "/usr/lib",
+        "/usr/bin/script.sh"
+      )
+    end
+  end
 end
