@@ -24,18 +24,20 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#glob" do
   end
 
   it "matches all files with *" do
-    result = subject.glob("lib/*").sort
+    result = subject.glob("lib/*")
     expect(result).to include("lib/file_a.rb", "lib/file_b.txt", "lib/nested")
   end
 
   it "matches files with specific extension using *.ext" do
-    result = subject.glob("lib/*.rb").sort
+    result = subject.glob("lib/*.rb")
+
     expect(result).to eq(["lib/file_a.rb"])
   end
 
   it "recursively matches files with **/*" do
-    result = subject.glob("lib/**/*").sort
-    expected = [
+    result = subject.glob("lib/**/*")
+
+    expect(result).to contain_exactly(
       "lib/file_a.rb",
       "lib/file_b.txt",
       "lib/nested",
@@ -43,30 +45,27 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#glob" do
       "lib/nested/file_d.txt",
       "lib/nested/deep",
       "lib/nested/deep/file_e.rb"
-    ].sort
-    expect(result).to eq(expected)
+    )
   end
 
   it "recursively matches files with specific extension using **/*.ext" do
-    result = subject.glob("lib/**/*.rb").sort
-    expect(result).to eq(
-      [
-        "lib/file_a.rb",
-        "lib/nested/file_c.rb",
-        "lib/nested/deep/file_e.rb"
-      ].sort
+    result = subject.glob("lib/**/*.rb")
+
+    expect(result).to contain_exactly(
+      "lib/file_a.rb",
+      "lib/nested/file_c.rb",
+      "lib/nested/deep/file_e.rb"
     )
   end
 
   it "matches files in multiple directories" do
     result = subject.glob("{lib,app}/**/*.rb").sort
-    expect(result).to eq(
-      [
-        "lib/file_a.rb",
-        "lib/nested/file_c.rb",
-        "lib/nested/deep/file_e.rb",
-        "app/models/user.rb"
-      ].sort
+
+    expect(result).to contain_exactly(
+      "lib/file_a.rb",
+      "lib/nested/file_c.rb",
+      "lib/nested/deep/file_e.rb",
+      "app/models/user.rb"
     )
   end
 
@@ -75,17 +74,17 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#glob" do
     subject.write("lib/file_y.rb", "content")
 
     result = subject.glob("lib/file_?.rb").sort
-    expect(result).to eq(["lib/file_a.rb", "lib/file_x.rb", "lib/file_y.rb"].sort)
+    expect(result).to contain_exactly("lib/file_a.rb", "lib/file_x.rb", "lib/file_y.rb")
   end
 
   it "matches character sets with []" do
-    result = subject.glob("lib/file_[ab].rb").sort
-    expect(result).to eq(["lib/file_a.rb"])
+    result = subject.glob("lib/file_[ab].rb")
+    expect(result).to contain_exactly("lib/file_a.rb")
   end
 
   it "matches character ranges with [a-z]" do
     subject.write("lib/file_z.rb", "content")
-    result = subject.glob("lib/file_[a-c].rb").sort
+    result = subject.glob("lib/file_[a-c].rb")
     expect(result).to eq(["lib/file_a.rb"])
   end
 
@@ -110,15 +109,17 @@ RSpec.describe Staticky::Files::MemoryFileSystem, "#glob" do
   end
 
   it "handles patterns with .." do
-    subject.chdir("lib/nested")
-    result = subject.glob("../*.rb").sort
-    expect(result).to eq(["../file_a.rb"])
+    subject.chdir("lib/nested") do
+      result = subject.glob("../*.rb").sort
+      expect(result).to eq(["../file_a.rb"])
+    end
   end
 
   it "handles patterns with ." do
-    subject.chdir("lib")
-    result = subject.glob("./*.rb").sort
-    expect(result).to eq(["./file_a.rb"])
+    subject.chdir("lib") do
+      result = subject.glob("./*.rb").sort
+      expect(result).to eq(["./file_a.rb"])
+    end
   end
 
   it "returns relative paths when pattern is relative" do
