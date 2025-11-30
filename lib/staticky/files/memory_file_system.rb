@@ -349,8 +349,8 @@ module Staticky
       # @param pattern [Pathname, String] the glob pattern to match
       # @return [Array<String>] the matching file paths
       def glob(pattern)
-        pattern = pattern.to_s
-        patterns = expand_braces(pattern)
+        pattern = GlobPattern.new(pattern)
+        patterns = pattern.expanded
 
         # Get the current working directory path relative to root
         current_dir = if @root == Node.root
@@ -363,22 +363,22 @@ module Staticky
         all_paths = collect_paths_relative_to_current_dir(current_dir)
 
         matches = []
-        patterns.each do |expanded_pattern|
+        patterns.each do |glob_pattern|
           # Determine if we should match dotfiles
           flags = File::FNM_PATHNAME
-          flags |= File::FNM_DOTMATCH if pattern_has_dot?(expanded_pattern)
+          flags |= File::FNM_DOTMATCH if glob_pattern.dot?
 
           # For each path, check if it matches the pattern
           all_paths.each do |path|
             # Handle directory-specific patterns
-            if expanded_pattern.end_with?("/")
+            if glob_pattern.directory?
               # Check if the path is a directory and matches the pattern
               # without trailing slash
-              if File.fnmatch(expanded_pattern[0..-2], path, flags)
+              if File.fnmatch(glob_pattern.pattern[0..-2], path, flags)
                 # Add trailing slash to indicate directory
                 matches << "#{path}/"
               end
-            elsif File.fnmatch(expanded_pattern, path, flags)
+            elsif File.fnmatch(glob_pattern.pattern, path, flags)
               matches << path
             end
           end
@@ -389,20 +389,6 @@ module Staticky
       end
 
       private
-
-      # Check if the pattern explicitly includes a dot that would match dotfiles
-      # Patterns like ".*", "*/.*", "*/.*/*", etc.
-      # But not if the dot is part of a normal file extension
-      def pattern_has_dot?(pattern)
-        pattern_is_relative = pattern.start_with?(".") &&
-          !pattern.start_with?("./") &&
-          !pattern.start_with?("../")
-
-        pattern_is_relative ||
-          pattern.include?(".*") ||
-          pattern.include?("/.") ||
-          pattern.include?("?.")
-      end
 
       def build_path_from_root(node)
         # Since we don't have parent pointers, we need a different approach
@@ -461,22 +447,6 @@ module Staticky
         # Start collecting from the current directory (@root)
         collect_paths.call(current_node, "")
         paths
-      end
-
-      def expand_braces(pattern)
-        # Simple brace expansion for {a,b} patterns
-        if pattern.include?("{") && pattern.include?("}")
-          start_idx = pattern.index("{")
-          end_idx = pattern.index("}")
-          prefix = pattern[0...start_idx]
-          suffix = pattern[(end_idx + 1)..]
-          options = pattern[(start_idx + 1)...end_idx].split(",")
-          options.flat_map do |option|
-            expand_braces("#{prefix}#{option}#{suffix}")
-          end
-        else
-          [pattern]
-        end
       end
 
       def for_each_segment(path, &)

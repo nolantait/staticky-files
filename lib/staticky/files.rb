@@ -5,6 +5,7 @@ module Staticky
     require_relative "files/version"
     require_relative "files/error"
     require_relative "files/adapter"
+    require_relative "files/glob_pattern"
 
     OPEN_MODE = ::File::RDWR
     WRITE_MODE = (::File::CREAT | ::File::WRONLY | ::File::TRUNC).freeze
