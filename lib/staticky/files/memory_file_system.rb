@@ -352,15 +352,8 @@ module Staticky
         pattern = GlobPattern.new(pattern)
         patterns = pattern.expanded
 
-        # Get the current working directory path relative to root
-        current_dir = if @root == Node.root
-          ""
-        else
-          build_path_from_root(@root)
-        end
-
         # Collect all paths relative to current directory
-        all_paths = collect_paths_relative_to_current_dir(current_dir)
+        all_paths = collect_paths_relative_to_current_dir
 
         matches = []
         patterns.each do |glob_pattern|
@@ -389,6 +382,14 @@ module Staticky
       end
 
       private
+
+      def current_directory
+        if @root == Node.root
+          File::SEPARATOR
+        else
+          build_path_from_root(@root)
+        end
+      end
 
       def build_path_from_root(node)
         # Since we don't have parent pointers, we need a different approach
@@ -420,7 +421,7 @@ module Staticky
       end
 
       # @param current_dir [String] the current directory path
-      def collect_paths_relative_to_current_dir(current_dir)
+      def collect_paths_relative_to_current_dir
         # Start from the current directory (@root)
         paths = []
 
@@ -443,7 +444,7 @@ module Staticky
           end
         end
 
-        current_node = find_directory(current_dir) || @root
+        current_node = find_directory(current_directory) || @root
         # Start collecting from the current directory (@root)
         collect_paths.call(current_node, "")
         paths
