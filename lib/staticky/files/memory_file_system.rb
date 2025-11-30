@@ -350,54 +350,97 @@ module Staticky
       # @return [Array<String>] the matching file paths
       def glob(pattern)
         pattern = pattern.to_s
-        # Handle relative patterns by expanding them from the current directory
-        if pattern.start_with?("/")
-          base_path = "/"
-          pattern = pattern[1..-1]
-        else
-          base_path = pwd == "/" ? "" : pwd
-        end
+        patterns = expand_braces(pattern)
+        all_paths = collect_all_paths(@root, "")
 
         matches = []
-        traverse(@root, base_path, pattern, matches)
-        matches.sort
+        patterns.each do |expanded_pattern|
+          if expanded_pattern.start_with?("/")
+            # For absolute paths, we need to match against paths starting
+            # from root. Remove leading slash to make them relative to root
+            search_pattern = expanded_pattern[1..]
+          else
+            # For relative patterns, we need to consider the current
+            # working directory. Expand the pattern relative to pwd
+            expanded_pattern_path = expand_path(expanded_pattern, pwd)
+            # Remove leading slash if present
+            if expanded_pattern_path.start_with?("/")
+              search_pattern = expanded_pattern_path[1..]
+            else
+              # This shouldn't happen with expand_path, but handle it
+              search_pattern = expanded_pattern
+            end
+          end
+
+          # Determine flags for fnmatch
+          flags = File::FNM_PATHNAME
+          # Include dotfiles only if the pattern explicitly matches them
+          unless search_pattern.include?(".*") || search_pattern.include?("/.")
+            flags |= File::FNM_DOTMATCH
+          end
+
+          # Match each path against the pattern
+          all_paths.each do |path|
+            node = find(path)
+
+            # For directories, check if pattern ends with / and adjust
+            if pattern.end_with?("/") && node&.directory?
+              # Check if the path matches the pattern without the trailing slash
+              if File.fnmatch(search_pattern[0..-2], path, flags)
+                matches << "#{path}/"
+              end
+            elsif File.fnmatch(search_pattern, path, flags)
+              matches << path
+            end
+          end
+        end
+
+        matches.uniq.sort
       end
 
       private
 
-      def traverse(node, current_path, pattern, matches)
-        # Generate the full path for the current node
-        full_path = if current_path.empty?
+      def collect_all_paths(node, current_path)
+        paths = []
+
+        # Build the path for the current node
+        path = if node.segment == "/"
+          ""
+        elsif current_path.empty?
           node.segment
         else
-          File.join(current_path, node.segment)
+          File.join(
+            current_path,
+            node.segment
+          )
         end
 
-        # Remove leading slash if present to make paths relative
-        full_path = full_path[1..] if full_path.start_with?("/")
+        # Add the current path if it's not the root
+        paths << path unless path.empty?
 
-        # Check if the current path matches the pattern
-        matching_pattern = File.fnmatch(
-          pattern,
-          full_path,
-          File::FNM_PATHNAME | File::FNM_DOTMATCH
-        )
-
-        if matching_pattern
-          # For directories, the spec expects trailing slashes when pattern
-          # has them
-          matches << if node.directory? && pattern.end_with?("/")
-            "#{full_path}/"
-          else
-            full_path
+        # Recurse into children
+        if node.directory? && node.children
+          node.children.each_value do |child|
+            paths += collect_all_paths(child, path)
           end
         end
 
-        # Recurse into children if it's a directory
-        return unless node.directory? && node.children
+        paths
+      end
 
-        node.children.each_value do |child|
-          traverse(child, full_path, pattern, matches)
+      def expand_braces(pattern)
+        # Simple brace expansion for {a,b} patterns
+        if pattern.include?("{") && pattern.include?("}")
+          start_idx = pattern.index("{")
+          end_idx = pattern.index("}")
+          prefix = pattern[0...start_idx]
+          suffix = pattern[(end_idx + 1)..]
+          options = pattern[(start_idx + 1)...end_idx].split(",")
+          options.flat_map do |option|
+            expand_braces("#{prefix}#{option}#{suffix}")
+          end
+        else
+          [pattern]
         end
       end
 
