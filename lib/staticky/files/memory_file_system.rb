@@ -146,7 +146,7 @@ module Staticky
       #
       # @raise [Staticky::Files::IOError] if path cannot be found or it isn't a
       #   directory
-      def chdir(path)
+      def chdir(path, &)
         path = Path[path]
         directory = find(path)
 
@@ -349,22 +349,55 @@ module Staticky
       # @param pattern [Pathname, String] the glob pattern to match
       # @return [Array<String>] the matching file paths
       def glob(pattern)
+        pattern = pattern.to_s
+        # Handle relative patterns by expanding them from the current directory
+        if pattern.start_with?("/")
+          base_path = "/"
+          pattern = pattern[1..-1]
+        else
+          base_path = pwd == "/" ? "" : pwd
+        end
+
         matches = []
-        traverse(@root, "/", pattern.to_s, matches)
-        matches
+        traverse(@root, base_path, pattern, matches)
+        matches.sort
       end
 
       private
 
       def traverse(node, current_path, pattern, matches)
-        if node.file? && File.fnmatch(pattern, current_path, File::FNM_PATHNAME)
-          matches << current_path
-        elsif node.directory?
-          return if node.children.nil?
+        # Generate the full path for the current node
+        full_path = if current_path.empty?
+          node.segment
+        else
+          File.join(current_path, node.segment)
+        end
 
-          node.children.each do |name, child|
-            traverse(child, File.join(current_path, name), pattern, matches)
+        # Remove leading slash if present to make paths relative
+        full_path = full_path[1..] if full_path.start_with?("/")
+
+        # Check if the current path matches the pattern
+        matching_pattern = File.fnmatch(
+          pattern,
+          full_path,
+          File::FNM_PATHNAME | File::FNM_DOTMATCH
+        )
+
+        if matching_pattern
+          # For directories, the spec expects trailing slashes when pattern
+          # has them
+          matches << if node.directory? && pattern.end_with?("/")
+            "#{full_path}/"
+          else
+            full_path
           end
+        end
+
+        # Recurse into children if it's a directory
+        return unless node.directory? && node.children
+
+        node.children.each_value do |child|
+          traverse(child, full_path, pattern, matches)
         end
       end
 
