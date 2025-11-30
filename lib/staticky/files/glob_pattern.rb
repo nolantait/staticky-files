@@ -20,7 +20,7 @@ module Staticky
       # Patterns like ".*", "*/.*", "*/.*/*", etc.
       # But not if the dot is part of a normal file extension
       def dot?
-        relative? ||
+        dotfile? ||
           pattern.include?(".*") ||
           pattern.include?("/.") ||
           pattern.include?("?.")
@@ -30,13 +30,15 @@ module Staticky
         pattern.end_with?("/")
       end
 
-      private
-
       def relative?
-        pattern.start_with?(".") &&
-          !pattern.start_with?("./") &&
-          !pattern.start_with?("../")
+        pattern.start_with?("./", "../")
       end
+
+      def dotfile?
+        pattern.start_with?(".") && !relative?
+      end
+
+      private
 
       # @return [Array<String>] the expanded patterns
       def expand_braces(pattern)
