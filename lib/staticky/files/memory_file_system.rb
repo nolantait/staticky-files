@@ -351,80 +351,115 @@ module Staticky
       def glob(pattern)
         pattern = pattern.to_s
         patterns = expand_braces(pattern)
-        all_paths = collect_all_paths(@root, "")
+
+        # Get the current working directory path relative to root
+        current_dir = if @root == Node.root
+          ""
+        else
+          build_path_from_root(@root)
+        end
+
+        # Collect all paths relative to current directory
+        all_paths = collect_paths_relative_to_current_dir(current_dir)
 
         matches = []
         patterns.each do |expanded_pattern|
-          if expanded_pattern.start_with?("/")
-            # For absolute paths, we need to match against paths starting
-            # from root. Remove leading slash to make them relative to root
-            search_pattern = expanded_pattern[1..]
-          else
-            # For relative patterns, we need to consider the current
-            # working directory. Expand the pattern relative to pwd
-            expanded_pattern_path = expand_path(expanded_pattern, pwd)
-            # Remove leading slash if present
-            if expanded_pattern_path.start_with?("/")
-              search_pattern = expanded_pattern_path[1..]
-            else
-              # This shouldn't happen with expand_path, but handle it
-              search_pattern = expanded_pattern
-            end
-          end
-
-          # Determine flags for fnmatch
+          # Determine if we should match dotfiles
           flags = File::FNM_PATHNAME
-          # Include dotfiles only if the pattern explicitly matches them
-          unless search_pattern.include?(".*") || search_pattern.include?("/.")
-            flags |= File::FNM_DOTMATCH
-          end
+          flags |= File::FNM_DOTMATCH if pattern_has_dot?(expanded_pattern)
 
-          # Match each path against the pattern
+          # For each path, check if it matches the pattern
           all_paths.each do |path|
-            node = find(path)
-
-            # For directories, check if pattern ends with / and adjust
-            if pattern.end_with?("/") && node&.directory?
-              # Check if the path matches the pattern without the trailing slash
-              if File.fnmatch(search_pattern[0..-2], path, flags)
+            # Handle directory-specific patterns
+            if expanded_pattern.end_with?("/")
+              # Check if the path is a directory and matches the pattern
+              # without trailing slash
+              if File.fnmatch(expanded_pattern[0..-2], path, flags)
+                # Add trailing slash to indicate directory
                 matches << "#{path}/"
               end
-            elsif File.fnmatch(search_pattern, path, flags)
+            elsif File.fnmatch(expanded_pattern, path, flags)
               matches << path
             end
           end
         end
 
+        # Remove duplicates and sort
         matches.uniq.sort
       end
 
       private
 
-      def collect_all_paths(node, current_path)
-        paths = []
+      # Check if the pattern explicitly includes a dot that would match dotfiles
+      # Patterns like ".*", "*/.*", "*/.*/*", etc.
+      # But not if the dot is part of a normal file extension
+      def pattern_has_dot?(pattern)
+        pattern_is_relative = pattern.start_with?(".") &&
+          !pattern.start_with?("./") &&
+          !pattern.start_with?("../")
 
-        # Build the path for the current node
-        path = if node.segment == "/"
-          ""
-        elsif current_path.empty?
-          node.segment
-        else
-          File.join(
-            current_path,
-            node.segment
-          )
-        end
+        pattern_is_relative ||
+          pattern.include?(".*") ||
+          pattern.include?("/.") ||
+          pattern.include?("?.")
+      end
 
-        # Add the current path if it's not the root
-        paths << path unless path.empty?
+      def build_path_from_root(node)
+        # Since we don't have parent pointers, we need a different approach
+        # Let's find the path by traversing from the root
+        find_path_from_root(Node.root, node, "")
+      end
 
-        # Recurse into children
-        if node.directory? && node.children
-          node.children.each_value do |child|
-            paths += collect_all_paths(child, path)
+      def find_path_from_root(current_node, target_node, current_path)
+        # If we found the target node, return the path
+        return current_path if current_node == target_node
+
+        # If current node is a directory, check its children
+        if current_node.directory? && current_node.children
+          current_node.children.each do |segment, child|
+            new_path = if current_path.empty?
+              segment
+            else
+              File.join(
+                current_path,
+                segment
+              )
+            end
+            result = find_path_from_root(child, target_node, new_path)
+            return result if result
           end
         end
 
+        nil
+      end
+
+      # @param current_dir [String] the current directory path
+      def collect_paths_relative_to_current_dir(current_dir)
+        # Start from the current directory (@root)
+        paths = []
+
+        # Helper function to collect paths
+        collect_paths = ->(node, current_relative_path) do
+          # Add the current path if it's not empty
+          paths << current_relative_path unless current_relative_path.empty?
+
+          # If it's a directory, recurse into children
+          if node.directory? && node.children
+            node.children.each do |segment, child|
+              new_relative_path = if current_relative_path.empty?
+                segment
+              else
+                File.join(current_relative_path, segment)
+              end
+
+              collect_paths.call(child, new_relative_path)
+            end
+          end
+        end
+
+        current_node = find_directory(current_dir) || @root
+        # Start collecting from the current directory (@root)
+        collect_paths.call(current_node, "")
         paths
       end
 
