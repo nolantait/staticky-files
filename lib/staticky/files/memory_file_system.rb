@@ -350,10 +350,9 @@ module Staticky
       # @return [Array<String>] the matching file paths
       def glob(pattern)
         pattern = GlobPattern.new(pattern)
-        patterns = pattern.expanded
-
         matches = []
-        patterns.each do |glob_pattern|
+
+        pattern.expanded.each do |glob_pattern|
           # Determine if we should match dotfiles
           flags = File::FNM_PATHNAME
           flags |= File::FNM_DOTMATCH if glob_pattern.dot?
