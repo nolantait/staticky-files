@@ -5,9 +5,9 @@ module Staticky
     class GlobPattern
       attr_reader :pattern, :path
 
-      # @param pattern [String] the glob pattern
+      # @param pattern [Pathname, String] the glob pattern
       def initialize(pattern)
-        @pattern = pattern
+        @pattern = pattern.to_s
         @path = Pathname.new(pattern)
       end
 
